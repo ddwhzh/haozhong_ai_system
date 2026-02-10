@@ -1,10 +1,8 @@
 FROM python:3.13.2-slim
 
-# Set working directory
 WORKDIR /app
 
-# Set non-sensitive environment variables
-ARG APP_ENV=production
+ARG APP_ENV=development
 
 ENV APP_ENV=${APP_ENV} \
     PYTHONFAULTHANDLER=1 \
@@ -12,39 +10,39 @@ ENV APP_ENV=${APP_ENV} \
     PYTHONHASHSEED=random \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100
+    PIP_DEFAULT_TIMEOUT=100 \
+    PATH="/app/.venv/bin:$PATH"
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    curl \
     && pip install --upgrade pip \
     && pip install uv \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pyproject.toml first to leverage Docker cache
+# Create non-root user BEFORE copying files (avoids expensive chown -R)
+RUN useradd -m -d /home/appuser appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app
+
+# Create venv and install deps as root (for build-essential access)
+RUN uv venv /app/.venv
+
 COPY pyproject.toml .
-RUN uv venv && . .venv/bin/activate && uv pip install -e .
+RUN uv pip install --python /app/.venv/bin/python .
 
-# Copy the application
-COPY . .
+# Copy application source
+COPY --chown=appuser:appuser . .
 
-# Make entrypoint script executable - do this before changing user
+# Ensure entrypoint is executable
 RUN chmod +x /app/scripts/docker-entrypoint.sh
 
-# Create a non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
+# Switch to non-root
 USER appuser
 
-# Create log directory
-RUN mkdir -p /app/logs
-
-# Default port
 EXPOSE 8000
 
-# Log the environment we're using
-RUN echo "Using ${APP_ENV} environment"
-
-# Command to run the application
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
-CMD ["/app/.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

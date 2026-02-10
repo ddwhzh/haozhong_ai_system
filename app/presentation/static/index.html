@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>昊中多Agent系统</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242836;
+      --surface3: #2e3348;
+      --border: #2e3348;
+      --text: #e4e6f0;
+      --text2: #8b8fa3;
+      --text3: #5c6078;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --cyan: #22d3ee;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    header .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    header .logo span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header .status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    header .status .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* Main layout */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Chat area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .msg {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.6;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--surface2);
+      border-bottom-left-radius: 4px;
+      max-width: 85%;
+    }
+
+    .msg.system {
+      align-self: center;
+      background: transparent;
+      color: var(--text2);
+      font-size: 11px;
+      padding: 4px;
+    }
+
+    /* Typing */
+    .typing {
+      align-self: flex-start;
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text2);
+      animation: bounce 1.4s infinite;
+    }
+
+    .typing .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+      }
+
+      30% {
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 12px 20px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-wrap {
+      display: flex;
+      gap: 8px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .input-wrap textarea {
+      flex: 1;
+      padding: 9px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-height: 40px;
+      max-height: 100px;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrap textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .input-wrap textarea::placeholder {
+      color: var(--text2);
+    }
+
+    .input-wrap button {
+      padding: 0 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .input-wrap button:hover {
+      background: var(--accent2);
+    }
+
+    .input-wrap button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Side panel */
+    .side-panel {
+      width: 380px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .side-panel::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      color: var(--accent2);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Panel sections */
+    .panel-section {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel-section h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      font-size: 12px;
+    }
+
+    .metric-row .label {
+      color: var(--text2);
+    }
+
+    .metric-row .value {
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .agent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      margin: 2px 2px 2px 0;
+    }
+
+    .agent-badge.retrieval {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+    }
+
+    .agent-badge.generation {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent2);
+    }
+
+    .agent-badge.evaluation {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.5s;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text3);
+      font-size: 12px;
+      padding: 16px 0;
+    }
+
+    /* Intermediate step card */
+    .step-group {
+      margin-bottom: 12px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border-radius: 8px 8px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .step-header:hover {
+      background: var(--surface3);
+    }
+
+    .step-header .arrow {
+      font-size: 10px;
+      color: var(--text2);
+      transition: transform 0.2s;
+      width: 14px;
+      text-align: center;
+    }
+
+    .step-header.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .step-header .step-label {
+      font-size: 12px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .step-header .step-count {
+      font-size: 10px;
+      color: var(--text2);
+      background: var(--border);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    .step-body {
+      display: none;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .step-body.open {
+      display: block;
+    }
+
+    .step-body::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .step-body::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
+
+    .node-card {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .node-card:last-child {
+      border-bottom: none;
+    }
+
+    .node-card .node-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .node-card .node-meta .conf {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .node-card .node-meta .conf.high {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+    }
+
+    .node-card .node-meta .conf.mid {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+    }
+
+    .node-card .node-meta .conf.low {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+    }
+
+    .node-card .node-meta .intent-tag {
+      font-size: 10px;
+      color: var(--text3);
+      font-style: italic;
+    }
+
+    .node-card .node-content {
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .node-card .node-content.expanded {
+      max-height: none;
+    }
+
+    .node-card .node-content.truncated::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: linear-gradient(transparent, var(--surface2));
+    }
+
+    .node-card .expand-btn {
+      font-size: 10px;
+      color: var(--accent2);
+      cursor: pointer;
+      margin-top: 2px;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .node-tags {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .node-tags .tag {
+      font-size: 9px;
+      color: var(--cyan);
+      background: rgba(34, 211, 238, 0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .meta-raw {
+      margin-top: 4px;
+      border-top: 1px dashed var(--border);
+      padding-top: 4px;
+    }
+
+    .meta-raw summary {
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--text2);
+    }
+
+    .meta-raw pre {
+      margin: 4px 0 0;
+      padding: 6px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface3);
+      font-size: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    @media (max-width: 900px) {
+      .side-panel {
+        width: 320px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .side-panel {
+        display: none;
+      }
+
+      .msg {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        style="color:var(--accent)">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </svg>
+      <span>昊中多Agent系统</span>
+    </div>
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">连接中...</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="msg system">Agent管道: Classify(QDMR) → Explore(Tree+Backtrack) → Freeze → Plan → Execute → Validate →
+          Done</div>
+      </div>
+      <div class="input-area">
+        <div class="input-wrap">
+          <textarea id="input" placeholder="输入问题... (Enter 发送, Shift+Enter 换行)" rows="1"></textarea>
+          <button id="sendBtn" onclick="sendMessage()">发送</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('overview')">概览</button>
+        <button class="tab-btn" onclick="switchTab('steps')">中间产物</button>
+        <button class="tab-btn" onclick="switchTab('graph')">证据图</button>
+      </div>
+      <div class="tab-content">
+        <!-- Overview tab -->
+        <div id="tab-overview" class="tab-pane active">
+          <div class="panel-section">
+            <h3>管道状态</h3>
+            <div id="pipelineStatus" class="empty-state">等待查询...</div>
+          </div>
+          <div class="panel-section">
+            <h3>Agent指标</h3>
+            <div id="agentMetrics" class="empty-state">暂无数据</div>
+          </div>
+        </div>
+        <!-- Intermediate Steps tab -->
+        <div id="tab-steps" class="tab-pane">
+          <div id="intermediateSteps" class="empty-state">暂无中间产物</div>
+        </div>
+        <!-- Evidence Graph tab -->
+        <div id="tab-graph" class="tab-pane">
+          <div class="panel-section">
+            <h3>证据图概览</h3>
+            <div id="evidenceInfo" class="empty-state">暂无数据</div>
+          </div>
+          <div class="panel-section">
+            <h3>节点列表</h3>
+            <div id="evidenceNodes" class="empty-state">暂无数据</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Tab switching
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', ['overview', 'steps', 'graph'][i] === name);
+      });
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    // Auto-resize textarea
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+    });
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    function addMessage(text, role) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'typing';
+      div.id = 'typingIndicator';
+      div.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function hideTyping() {
+      const el = document.getElementById('typingIndicator');
+      if (el) el.remove();
+    }
+
+    function updatePipelineStatus(phase) {
+      const phases = ['explore', 'freeze', 'plan', 'execute', 'validate', 'done'];
+      const labels = ['Explore', 'Freeze', 'Plan', 'Execute', 'Validate', 'Done'];
+      const idx = phases.indexOf(phase);
+      const effectiveIdx = idx >= 0 ? idx : phases.length - 1;
+      let html = '<div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">';
+      phases.forEach((p, i) => {
+        const active = i <= effectiveIdx;
+        const current = p === phase;
+        const style = current ? 'font-weight:700;color:var(--accent2)' : (active ? 'color:var(--text)' : 'color:var(--text3)');
+        html += '<span style="font-size:10px;' + style + '">' + labels[i] + '</span>';
+        if (i < phases.length - 1) html += '<span style="color:' + (active ? 'var(--accent)' : 'var(--border)') + ';font-size:9px">&rarr;</span>';
+      });
+      html += '</div>';
+      const pct = Math.min(100, ((effectiveIdx + 1) / phases.length) * 100);
+      html += '<div class="progress-bar"><div class="fill" style="width:' + pct + '%;background:var(--accent)"></div></div>';
+      document.getElementById('pipelineStatus').innerHTML = html;
+    }
+
+    function updateEvidence(summary) {
+      if (!summary || !summary.node_count) {
+        document.getElementById('evidenceInfo').innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+      }
+      let html = '';
+      html += `<div class="metric-row"><span class="label">节点数</span><span class="value">${summary.node_count}</span></div>`;
+      html += `<div class="metric-row"><span class="label">边数</span><span class="value">${summary.edge_count}</span></div>`;
+      html += `<div class="metric-row"><span class="label">平均置信度</span><span class="value">${(summary.avg_confidence || 0).toFixed(2)}</span></div>`;
+      if (summary.agents_involved) {
+        html += '<div style="margin-top:6px">';
+        summary.agents_involved.forEach(a => {
+          const t = a.includes('retrieval') ? 'retrieval' : a.includes('generation') ? 'generation' : 'evaluation';
+          const l = t === 'retrieval' ? '检索' : t === 'generation' ? '生成' : '评估';
+          html += `<span class="agent-badge ${t}">${l}</span>`;
+        });
+        html += '</div>';
+      }
+      document.getElementById('evidenceInfo').innerHTML = html;
+    }
+
+    function updateMetrics(metrics) {
+      if (!metrics || Object.keys(metrics).length === 0) {
+        document.getElementById('agentMetrics').innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+      }
+      let html = '';
+      const names = { retrieval_agent: '检索Agent', generation_agent: '生成Agent', evaluation_agent: '评估Agent' };
+      const types = { retrieval_agent: 'retrieval', generation_agent: 'generation', evaluation_agent: 'evaluation' };
+
+      for (const [agent, m] of Object.entries(metrics)) {
+        const name = names[agent] || agent;
+        const type = types[agent] || 'retrieval';
+        html += `<div style="margin-bottom:8px">`;
+        html += `<span class="agent-badge ${type}">${name}</span>`;
+        if (m.elapsed_seconds) html += `<div class="metric-row"><span class="label">耗时</span><span class="value">${m.elapsed_seconds.toFixed(1)}s</span></div>`;
+        if (m.q_type) html += `<div class="metric-row"><span class="label">QDMR类型</span><span class="value" style="color:var(--accent2)">${m.q_type}</span></div>`;
+        if (m.classification_confidence !== undefined) html += `<div class="metric-row"><span class="label">分类置信度</span><span class="value">${(m.classification_confidence * 100).toFixed(0)}%</span></div>`;
+        if (m.tree_step_count !== undefined) html += `<div class="metric-row"><span class="label">QDMR步骤</span><span class="value">${m.tree_step_count}</span></div>`;
+        if (m.backtrack_count !== undefined) html += `<div class="metric-row"><span class="label">分支回退</span><span class="value" style="color:${m.backtrack_count > 0 ? 'var(--amber)' : 'var(--text)'}">${m.backtrack_count}</span></div>`;
+        if (m.sub_query_count !== undefined) html += `<div class="metric-row"><span class="label">子查询</span><span class="value">${m.sub_query_count}</span></div>`;
+        if (m.breadth_result_count !== undefined) html += `<div class="metric-row"><span class="label">向量结果</span><span class="value">${m.breadth_result_count}</span></div>`;
+        if (m.web_result_count !== undefined) html += `<div class="metric-row"><span class="label">Web结果(Brave)</span><span class="value">${m.web_result_count}</span></div>`;
+        if (m.depth_chain_count !== undefined) html += `<div class="metric-row"><span class="label">KG推理链</span><span class="value">${m.depth_chain_count}</span></div>`;
+        if (m.fused_count !== undefined) html += `<div class="metric-row"><span class="label">融合结果</span><span class="value">${m.fused_count}</span></div>`;
+        if (m.proposal_count !== undefined) html += `<div class="metric-row"><span class="label">Proposal</span><span class="value">${m.proposal_count}</span></div>`;
+        if (m.generated_count !== undefined) html += `<div class="metric-row"><span class="label">生成段落</span><span class="value">${m.generated_count}</span></div>`;
+        if (m.overall_score !== undefined) {
+          const s = m.overall_score;
+          const c = s >= 0.7 ? 'var(--green)' : s >= 0.4 ? 'var(--amber)' : 'var(--red)';
+          html += `<div class="metric-row"><span class="label">综合评分</span><span class="value" style="color:${c}">${s.toFixed(2)}</span></div>`;
+        }
+        if (m.faithfulness_rate !== undefined) html += `<div class="metric-row"><span class="label">忠实度</span><span class="value">${(m.faithfulness_rate * 100).toFixed(0)}%</span></div>`;
+        if (m.prompt_optimizations !== undefined) html += `<div class="metric-row"><span class="label">Prompt优化</span><span class="value">${m.prompt_optimizations}</span></div>`;
+        html += `</div>`;
+      }
+      document.getElementById('agentMetrics').innerHTML = html;
+    }
+
+    function updateIntermediateSteps(steps) {
+      const container = document.getElementById('intermediateSteps');
+      if (!steps || steps.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无中间产物</div>';
+        return;
+      }
+
+      const agentColors = {
+        retrieval_agent: 'var(--green)',
+        generation_agent: 'var(--accent2)',
+        evaluation_agent: 'var(--amber)',
+      };
+
+      let html = '';
+      steps.forEach((step, si) => {
+        const color = agentColors[step.agent] || 'var(--text)';
+        const id = 'step-' + si;
+        html += `<div class="step-group">`;
+        html += `<div class="step-header" onclick="toggleStep('${id}')" id="hdr-${id}">`;
+        html += `<span class="arrow">▶</span>`;
+        html += `<span class="step-label" style="color:${color}">${step.label}</span>`;
+        html += `<span class="step-count">${step.nodes.length}</span>`;
+        html += `</div>`;
+        html += `<div class="step-body" id="body-${id}">`;
+
+        step.nodes.forEach((node, ni) => {
+          const confClass = node.confidence >= 0.7 ? 'high' : node.confidence >= 0.4 ? 'mid' : 'low';
+          const contentId = 'content-' + si + '-' + ni;
+          html += '<div class="node-card">';
+          html += '<div class="node-meta">';
+          html += '<span class="conf ' + confClass + '">' + (node.confidence * 100).toFixed(0) + '%</span>';
+          html += '<span class="tag">' + escapeHtml(node.content_type || 'unknown') + '</span>';
+          if (node.intent_type) html += '<span class="tag">' + escapeHtml(node.intent_type) + '</span>';
+          if (node.source) html += '<span class="tag">source: ' + escapeHtml(node.source) + '</span>';
+          html += '<span class="intent-tag">' + escapeHtml(node.intent) + '</span>';
+          html += '</div>';
+          html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">';
+          html += 'Node: ' + escapeHtml((node.node_id || '').slice(0, 8));
+          if (node.created_at) html += ' | Created: ' + escapeHtml(node.created_at);
+          html += '</div>';
+
+          if (node.belief_content) {
+            html += '<div style="font-size:10px;color:var(--text2);margin-bottom:4px">';
+            html += 'Belief: ' + escapeHtml(node.belief_content);
+            html += '</div>';
+          }
+
+          if (node.parent_node_ids && node.parent_node_ids.length > 0) {
+            html += '<div style="font-size:10px;color:var(--text3);margin-bottom:2px">';
+            html += 'Parents: ' + node.parent_node_ids.map(function (id) { return '#' + escapeHtml(id.slice(0, 8)); }).join(', ');
+            html += '</div>';
+          }
+          if (node.child_node_ids && node.child_node_ids.length > 0) {
+            html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">';
+            html += 'Children: ' + node.child_node_ids.map(function (id) { return '#' + escapeHtml(id.slice(0, 8)); }).join(', ');
+            html += '</div>';
+          }
+
+          // Show key metadata (QDMR type, aspect, question, step, slot info, scores)
+          const m = node.metadata || {};
+          let metaHtml = '';
+          // QDMR classification metadata
+          if (m.q_type) metaHtml += '<div style="font-size:10px;color:var(--accent2);margin-bottom:2px;font-weight:600">QType: ' + escapeHtml(m.q_type) + '</div>';
+          if (m.reasoning) metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">分类原因: ' + escapeHtml(m.reasoning) + '</div>';
+          if (m.primary_strategy) metaHtml += '<div style="font-size:10px;color:var(--cyan);margin-bottom:2px">主策略: ' + escapeHtml(m.primary_strategy) + ' / 备选: ' + escapeHtml(m.fallback_strategy || '-') + '</div>';
+          // Tree step metadata
+          if (m.step_idx !== undefined) metaHtml += '<div style="font-size:10px;color:var(--accent2);margin-bottom:2px">Step #' + m.step_idx + ' [' + escapeHtml(m.operator || '') + ']</div>';
+          if (m.retrieval_strategy) metaHtml += '<div style="font-size:10px;color:var(--cyan);margin-bottom:2px">检索策略: ' + escapeHtml(m.retrieval_strategy) + '</div>';
+          const dependsOn = normalizeDependsOn(m.depends_on);
+          if (dependsOn.length > 0) metaHtml += '<div style="font-size:10px;color:var(--text3);margin-bottom:2px">依赖: #' + dependsOn.map(function (x) { return escapeHtml(String(x)); }).join(', #') + '</div>';
+          // Web result metadata
+          if (m.engine) metaHtml += '<div style="font-size:10px;color:var(--cyan);margin-bottom:2px">Web引擎: ' + escapeHtml(m.engine) + '</div>';
+          if (m.title) metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">标题: ' + escapeHtml(m.title) + '</div>';
+          if (m.url) metaHtml += '<div style="font-size:10px;color:var(--accent2);margin-bottom:2px;word-break:break-all">URL: ' + escapeHtml(m.url) + '</div>';
+          if (m.rank !== undefined) metaHtml += '<div style="font-size:10px;color:var(--text3);margin-bottom:2px">Web Rank: ' + m.rank + '</div>';
+          // General metadata
+          if (m.aspect) metaHtml += '<div style="font-size:10px;color:var(--cyan);margin-bottom:2px">Aspect: ' + escapeHtml(m.aspect) + '</div>';
+          if (m.question) metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">Q: ' + escapeHtml(m.question) + '</div>';
+          if (m.slot_count !== undefined) metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">Slots: ' + m.slot_count + (m.filled_count !== undefined ? ' (filled: ' + m.filled_count + ')' : '') + '</div>';
+          if (m.overall_score !== undefined) {
+            const sc = m.overall_score;
+            const scColor = sc >= 0.7 ? 'var(--green)' : sc >= 0.4 ? 'var(--amber)' : 'var(--red)';
+            metaHtml += '<div style="font-size:10px;margin-bottom:2px">Score: <span style="color:' + scColor + ';font-weight:600">' + sc.toFixed(2) + '</span></div>';
+          }
+          if (m.faithfulness_rate !== undefined) metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">Faithfulness: ' + (m.faithfulness_rate * 100).toFixed(0) + '%</div>';
+          // Generic metadata keys not covered above
+          const knownKeys = new Set([
+            'q_type', 'reasoning', 'primary_strategy', 'fallback_strategy',
+            'step_idx', 'operator', 'retrieval_strategy', 'depends_on',
+            'aspect', 'question', 'slot_count', 'filled_count',
+            'overall_score', 'faithfulness_rate'
+          ]);
+          Object.entries(m).forEach(function (entry) {
+            const key = entry[0];
+            const val = entry[1];
+            if (knownKeys.has(key)) return;
+            metaHtml += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">';
+            metaHtml += escapeHtml(key) + ': ' + formatMetaValue(val, 180);
+            metaHtml += '</div>';
+          });
+          if (metaHtml) html += '<div style="margin-bottom:4px;padding:3px 0;border-bottom:1px solid var(--border)">' + metaHtml + '</div>';
+
+          html += '<div class="node-content" id="' + contentId + '">' + escapeHtml(node.content) + '</div>';
+          if (node.content.length > 200) {
+            html += '<button class="expand-btn" onclick="toggleExpand(\'' + contentId + '\')">展开全文</button>';
+          }
+          if (Object.keys(m).length > 0) {
+            html += '<details class="meta-raw"><summary>查看原始metadata(JSON)</summary>';
+            html += '<pre>' + escapeHtml(JSON.stringify(m, null, 2)) + '</pre></details>';
+          }
+          if (node.tags && node.tags.length > 0) {
+            html += '<div class="node-tags">';
+            node.tags.forEach(function (t) { html += '<span class="tag">' + escapeHtml(t) + '</span>'; });
+            html += '</div>';
+          }
+          html += '</div>';
+        });
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+
+      // Mark content as truncated where needed
+      setTimeout(() => {
+        steps.forEach((step, si) => {
+          step.nodes.forEach((node, ni) => {
+            const el = document.getElementById(`content-${si}-${ni}`);
+            if (el && el.scrollHeight > el.clientHeight + 2) {
+              el.classList.add('truncated');
+            }
+          });
+        });
+      }, 50);
+    }
+
+    function toggleStep(id) {
+      const hdr = document.getElementById('hdr-' + id);
+      const body = document.getElementById('body-' + id);
+      hdr.classList.toggle('open');
+      body.classList.toggle('open');
+    }
+
+    function toggleExpand(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('expanded');
+      el.classList.remove('truncated');
+      const btn = el.nextElementSibling;
+      if (btn) btn.textContent = el.classList.contains('expanded') ? '收起' : '展开全文';
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function formatMetaValue(v, maxLen) {
+      if (v === null || v === undefined) return '-';
+      let text = '';
+      if (typeof v === 'string') {
+        text = v;
+      } else if (typeof v === 'object') {
+        try {
+          text = JSON.stringify(v);
+        } catch (e) {
+          text = String(v);
+        }
+      } else {
+        text = String(v);
+      }
+      if (text.length > maxLen) {
+        text = text.slice(0, maxLen) + '...';
+      }
+      return escapeHtml(text);
+    }
+
+    function normalizeDependsOn(v) {
+      if (!v && v !== 0) return [];
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        const t = v.trim();
+        if (!t) return [];
+        try {
+          const parsed = JSON.parse(t);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+          // ignore parse error and fall through
+        }
+        return t.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      }
+      return [];
+    }
+
+    function updateEvidenceNodes(steps) {
+      if (!steps || steps.length === 0) {
+        document.getElementById('evidenceNodes').innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+      }
+      // Show a summary count per content_type
+      const typeCounts = {};
+      steps.forEach(s => {
+        s.nodes.forEach(n => {
+          const k = n.content_type;
+          typeCounts[k] = (typeCounts[k] || 0) + 1;
+        });
+      });
+      const typeLabels = {
+        query: 'Input: 原始查询',
+        query_classification: 'Classify: QDMR查询分类',
+        tree_step: 'Explore: QDMR分解树步骤',
+        sub_query: 'Explore: 子查询',
+        document_chunk: 'Explore: RAG文档片段',
+        web_result: 'Explore: Brave Web结果',
+        kg_match: 'Explore: KG知识图谱匹配',
+        reasoning_chain: 'Explore: KG推理链',
+        fused_evidence: 'Explore: Cascade融合证据',
+        proposal: 'Plan: Proposal槽位定义',
+        generated_content: 'Execute: 证据图填空结果',
+        evaluation_result: 'Validate: 匈牙利匹配评估',
+        prompt_optimization: 'Validate: Prompt优化',
+      };
+      let html = '';
+      for (const [type, count] of Object.entries(typeCounts)) {
+        const label = typeLabels[type] || type;
+        html += `<div class="metric-row"><span class="label">${label}</span><span class="value">${count}</span></div>`;
+      }
+      document.getElementById('evidenceNodes').innerHTML = html;
+    }
+
+    async function sendMessage() {
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      addMessage(query, 'user');
+      showTyping();
+      updatePipelineStatus('retrieval');
+      document.getElementById('intermediateSteps').innerHTML = '<div class="empty-state">管道运行中...</div>';
+
+      try {
+        const res = await fetch('/api/v1/agent/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, max_iterations: 10 }),
+        });
+
+        hideTyping();
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          addMessage('错误: ' + (err.detail || res.statusText), 'system');
+          return;
+        }
+
+        const data = await res.json();
+        addMessage(data.response || '(空响应)', 'assistant');
+        updatePipelineStatus(data.phase_completed || 'done');
+        updateEvidence(data.evidence_summary);
+        updateMetrics(data.pipeline_metrics);
+        updateIntermediateSteps(data.intermediate_steps || []);
+        updateEvidenceNodes(data.intermediate_steps || []);
+
+        // Auto switch to intermediate steps tab if there are results
+        if (data.intermediate_steps && data.intermediate_steps.length > 0) {
+          switchTab('steps');
+        }
+
+      } catch (err) {
+        hideTyping();
+        addMessage('请求失败: ' + err.message, 'system');
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // Health check
+    fetch('/health').then(r => r.json()).then(d => {
+      const dot = document.getElementById('statusDot');
+      const txt = document.getElementById('statusText');
+      if (d.status === 'healthy') {
+        dot.style.background = 'var(--green)';
+        txt.textContent = '全部健康';
+      } else {
+        dot.style.background = 'var(--amber)';
+        txt.textContent = '部分降级';
+      }
+    }).catch(() => {
+      document.getElementById('statusDot').style.background = 'var(--red)';
+      document.getElementById('statusText').textContent = '连接失败';
+    });
+
+    inputEl.focus();
+  </script>
+</body>
+
+</html>

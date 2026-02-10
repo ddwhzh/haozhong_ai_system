@@ -1,1 +1,1 @@
-"""HuaXin Multi-Agent System — Managed Pyramid Architecture."""
+"""haozhong Multi-Agent System — Managed Pyramid Architecture."""

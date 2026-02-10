@@ -1,0 +1,48 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+.venv
+venv
+env
+
+# IDE
+.vscode
+.cursor
+.idea
+*.swp
+*.swo
+
+# Testing & CI
+.pytest_cache
+.coverage
+htmlcov
+tests/
+test_script/
+
+# Docker (avoid recursion)
+docker-compose*.yml
+Dockerfile
+
+# Documentation source (not needed at runtime)
+docs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files (injected via docker-compose)
+.env*
+!.env
+
+# Logs (container creates its own)
+logs/
+*.log

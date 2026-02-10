@@ -131,10 +131,11 @@ class Settings:
         self.ENVIRONMENT = get_environment()
 
         # Application Settings
-        self.PROJECT_NAME = os.getenv("PROJECT_NAME", "FastAPI LangGraph Template")
+        self.PROJECT_NAME = os.getenv("PROJECT_NAME", "haozhong Multi-Agent System")
         self.VERSION = os.getenv("VERSION", "1.0.0")
         self.DESCRIPTION = os.getenv(
-            "DESCRIPTION", "A production-ready FastAPI template with LangGraph and Langfuse integration"
+            "DESCRIPTION",
+            "Multi-Agent system with managed pyramid architecture: Retrieval, Generation, Evaluation agents",
         )
         self.API_V1_STR = os.getenv("API_V1_STR", "/api/v1")
         self.DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "t", "yes")
@@ -147,9 +148,10 @@ class Settings:
         self.LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")
         self.LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
 
-        # LangGraph Configuration
+        # LLM Configuration
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-        self.DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-5-mini")
+        self.OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "")
+        self.DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "glm-4-flash")
         self.DEFAULT_LLM_TEMPERATURE = float(os.getenv("DEFAULT_LLM_TEMPERATURE", "0.2"))
         self.MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2000"))
         self.MAX_LLM_CALL_RETRIES = int(os.getenv("MAX_LLM_CALL_RETRIES", "3"))
@@ -167,6 +169,7 @@ class Settings:
         self.LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))
         self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
         self.LOG_FORMAT = os.getenv("LOG_FORMAT", "json")  # "json" or "console"
+        self.API_PRESENTATION_MAX_WORKERS = int(os.getenv("API_PRESENTATION_MAX_WORKERS", "4"))
 
         # Postgres Configuration
         self.POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
@@ -200,11 +203,59 @@ class Settings:
             if value:
                 self.RATE_LIMIT_ENDPOINTS[endpoint] = value
 
-        # Evaluation Configuration
-        self.EVALUATION_LLM = os.getenv("EVALUATION_LLM", "gpt-5")
-        self.EVALUATION_BASE_URL = os.getenv("EVALUATION_BASE_URL", "https://api.openai.com/v1")
+        # Neo4j Configuration
+        self.NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+        self.NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+        self.NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "neo4j")
+        self.NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
+        self.NEO4J_POOL_SIZE = int(os.getenv("NEO4J_POOL_SIZE", "50"))
+
+        # Vector Store Configuration
+        self.VECTOR_COLLECTION_NAME = os.getenv("VECTOR_COLLECTION_NAME", "documents")
+        self.EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1536"))
+        self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+
+        # Retrieval Agent Configuration
+        self.RETRIEVAL_MAX_SUB_QUERIES = int(os.getenv("RETRIEVAL_MAX_SUB_QUERIES", "5"))
+        self.RETRIEVAL_KG_MAX_HOPS = int(os.getenv("RETRIEVAL_KG_MAX_HOPS", "3"))
+        self.RETRIEVAL_CASCADE_ROUNDS = int(os.getenv("RETRIEVAL_CASCADE_ROUNDS", "3"))
+        self.RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "10"))
+        self.RETRIEVAL_VECTOR_MODE = os.getenv("RETRIEVAL_VECTOR_MODE", "dense").lower()
+        self.RETRIEVAL_HYBRID_DENSE_WEIGHT = float(os.getenv("RETRIEVAL_HYBRID_DENSE_WEIGHT", "0.6"))
+        self.RETRIEVAL_HYBRID_SPARSE_WEIGHT = float(os.getenv("RETRIEVAL_HYBRID_SPARSE_WEIGHT", "0.4"))
+        self.RETRIEVAL_HYBRID_RRF_K = int(os.getenv("RETRIEVAL_HYBRID_RRF_K", "60"))
+        self.RETRIEVAL_HYBRID_CANDIDATES = int(os.getenv("RETRIEVAL_HYBRID_CANDIDATES", "30"))
+        self.RETRIEVAL_HYBRID_MAX_TERMS = int(os.getenv("RETRIEVAL_HYBRID_MAX_TERMS", "8"))
+        self.RETRIEVAL_BACKTRACK_THRESHOLD = float(os.getenv("RETRIEVAL_BACKTRACK_THRESHOLD", "0.4"))
+        self.RETRIEVAL_MAX_BRANCH_RETRIES = int(os.getenv("RETRIEVAL_MAX_BRANCH_RETRIES", "1"))
+        self.RETRIEVAL_MAX_TREE_DEPTH = int(os.getenv("RETRIEVAL_MAX_TREE_DEPTH", "3"))
+        self.BRAVE_SEARCH_ENABLED = os.getenv("BRAVE_SEARCH_ENABLED", "false").lower() in ("true", "1", "t", "yes")
+        self.BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "")
+        self.BRAVE_SEARCH_BASE_URL = os.getenv(
+            "BRAVE_SEARCH_BASE_URL",
+            "https://api.search.brave.com/res/v1/web/search",
+        )
+        self.BRAVE_SEARCH_TOP_K = int(os.getenv("BRAVE_SEARCH_TOP_K", "5"))
+        self.BRAVE_SEARCH_TIMEOUT_SECONDS = float(os.getenv("BRAVE_SEARCH_TIMEOUT_SECONDS", "8"))
+        self.BRAVE_AUTO_INDEX_TO_VECTOR = os.getenv("BRAVE_AUTO_INDEX_TO_VECTOR", "false").lower() in ("true", "1", "t", "yes")
+        self.BRAVE_AUTO_INDEX_MAX_ITEMS = int(os.getenv("BRAVE_AUTO_INDEX_MAX_ITEMS", "3"))
+        self.BRAVE_AUTO_INDEX_MIN_CONTENT_CHARS = int(os.getenv("BRAVE_AUTO_INDEX_MIN_CONTENT_CHARS", "30"))
+        self.KEYWORD_EXTRACTION_USE_LLM = os.getenv("KEYWORD_EXTRACTION_USE_LLM", "false").lower() in ("true", "1", "t", "yes")
+        self.KEYWORD_EXTRACTION_MAX_TERMS = int(os.getenv("KEYWORD_EXTRACTION_MAX_TERMS", "10"))
+
+        # Generation Agent Configuration
+        self.GENERATION_MAX_PROPOSALS = int(os.getenv("GENERATION_MAX_PROPOSALS", "5"))
+        self.GENERATION_PROPOSAL_TEMPERATURE = float(os.getenv("GENERATION_PROPOSAL_TEMPERATURE", "0.3"))
+
+        # Evaluation Agent Configuration
+        self.EVALUATION_LLM = os.getenv("EVALUATION_LLM", "gpt-4o")
         self.EVALUATION_API_KEY = os.getenv("EVALUATION_API_KEY", self.OPENAI_API_KEY)
-        self.EVALUATION_SLEEP_TIME = int(os.getenv("EVALUATION_SLEEP_TIME", "10"))
+        self.EVALUATION_CONFIDENCE_THRESHOLD = float(os.getenv("EVALUATION_CONFIDENCE_THRESHOLD", "0.7"))
+        self.EVALUATION_SPARSE_WEIGHT = float(os.getenv("EVALUATION_SPARSE_WEIGHT", "0.3"))
+
+        # Pipeline Configuration
+        self.PIPELINE_MAX_ITERATIONS = int(os.getenv("PIPELINE_MAX_ITERATIONS", "10"))
+        self.HITL_ENABLED = os.getenv("HITL_ENABLED", "true").lower() in ("true", "1", "t", "yes")
 
         # Apply environment-specific settings
         self.apply_environment_settings()

@@ -1,0 +1,380 @@
+{
+  "test_date": "2026-02-09",
+  "description": "A/B comparison: Simple vs QDMR retrieval pipeline",
+  "bug_fixes_applied": [
+    "metrics Dict[str, float] -> Dict[str, Any] for q_type string",
+    "VectorRetriever/KGRetriever content_type filter: accept 'tree_step' alongside 'sub_query'"
+  ],
+  "config": {
+    "backtrack_threshold": 0.4,
+    "max_branch_retries": 1,
+    "max_tree_depth": 3,
+    "top_k": 10,
+    "cascade_rounds": 3,
+    "kg_max_hops": 3
+  },
+  "results": [
+    {
+      "query": "什么是知识图谱?",
+      "complexity": "simple",
+      "expected_type": "QSelect",
+      "simple": {
+        "mode": "simple",
+        "query": "什么是知识图谱?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 45.61,
+        "total_nodes": 11,
+        "total_edges": 31,
+        "rag_nodes": 5,
+        "kg_nodes": 1,
+        "reasoning_chains": 1,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.481,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "document_chunk": 5,
+          "kg_match": 1,
+          "reasoning_chain": 1,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "什么是知识图谱?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 32.67,
+        "total_nodes": 18,
+        "total_edges": 36,
+        "rag_nodes": 0,
+        "kg_nodes": 5,
+        "reasoning_chains": 5,
+        "fused_nodes": 2,
+        "avg_retrieval_confidence": 0.879,
+        "fused_confidence": 0.9,
+        "backtrack_count": 0,
+        "tree_step_count": 5,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 5,
+          "kg_match": 5,
+          "reasoning_chain": 5,
+          "fused_evidence": 2
+        }
+      }
+    },
+    {
+      "query": "Neo4j是否支持全文检索?",
+      "complexity": "simple",
+      "expected_type": "QBoolean",
+      "simple": {
+        "mode": "simple",
+        "query": "Neo4j是否支持全文检索?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 26.01,
+        "total_nodes": 6,
+        "total_edges": 11,
+        "rag_nodes": 0,
+        "kg_nodes": 1,
+        "reasoning_chains": 1,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.879,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "kg_match": 1,
+          "reasoning_chain": 1,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "Neo4j是否支持全文检索?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 34.96,
+        "total_nodes": 10,
+        "total_edges": 21,
+        "rag_nodes": 0,
+        "kg_nodes": 2,
+        "reasoning_chains": 2,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.879,
+        "fused_confidence": 0.5,
+        "backtrack_count": 1,
+        "tree_step_count": 2,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 2,
+          "kg_match": 2,
+          "reasoning_chain": 2,
+          "fused_evidence": 3
+        }
+      }
+    },
+    {
+      "query": "知识图谱和向量数据库有什么区别?",
+      "complexity": "medium",
+      "expected_type": "QComparison",
+      "simple": {
+        "mode": "simple",
+        "query": "知识图谱和向量数据库有什么区别?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 31.45,
+        "total_nodes": 6,
+        "total_edges": 11,
+        "rag_nodes": 0,
+        "kg_nodes": 1,
+        "reasoning_chains": 1,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.879,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "kg_match": 1,
+          "reasoning_chain": 1,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "知识图谱和向量数据库有什么区别?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 41.98,
+        "total_nodes": 21,
+        "total_edges": 56,
+        "rag_nodes": 6,
+        "kg_nodes": 3,
+        "reasoning_chains": 3,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.594,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 5,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 5,
+          "kg_match": 3,
+          "reasoning_chain": 3,
+          "document_chunk": 6,
+          "fused_evidence": 3
+        }
+      }
+    },
+    {
+      "query": "哪些图数据库支持大规模分布式部署?",
+      "complexity": "medium",
+      "expected_type": "QFilter",
+      "simple": {
+        "mode": "simple",
+        "query": "哪些图数据库支持大规模分布式部署?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 29.64,
+        "total_nodes": 6,
+        "total_edges": 11,
+        "rag_nodes": 2,
+        "kg_nodes": 0,
+        "reasoning_chains": 0,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.311,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "document_chunk": 2,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "哪些图数据库支持大规模分布式部署?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 33.86,
+        "total_nodes": 7,
+        "total_edges": 9,
+        "rag_nodes": 1,
+        "kg_nodes": 0,
+        "reasoning_chains": 0,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.303,
+        "fused_confidence": 0.5,
+        "backtrack_count": 1,
+        "tree_step_count": 2,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 2,
+          "document_chunk": 1,
+          "fused_evidence": 3
+        }
+      }
+    },
+    {
+      "query": "谁发明了Transformer, 这个团队后来做了什么?",
+      "complexity": "complex",
+      "expected_type": "QChain",
+      "simple": {
+        "mode": "simple",
+        "query": "谁发明了Transformer, 这个团队后来做了什么?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 0.34,
+        "total_nodes": 1,
+        "total_edges": 0,
+        "rag_nodes": 0,
+        "kg_nodes": 0,
+        "reasoning_chains": 0,
+        "fused_nodes": 0,
+        "avg_retrieval_confidence": 0.0,
+        "fused_confidence": 0.0,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "谁发明了Transformer, 这个团队后来做了什么?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 9.37,
+        "total_nodes": 3,
+        "total_edges": 2,
+        "rag_nodes": 0,
+        "kg_nodes": 0,
+        "reasoning_chains": 0,
+        "fused_nodes": 0,
+        "avg_retrieval_confidence": 0.0,
+        "fused_confidence": 0.0,
+        "backtrack_count": 0,
+        "tree_step_count": 2,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 2
+        }
+      }
+    },
+    {
+      "query": "解释知识图谱的构建方法并说明其在金融领域的应用",
+      "complexity": "complex",
+      "expected_type": "QComposition",
+      "simple": {
+        "mode": "simple",
+        "query": "解释知识图谱的构建方法并说明其在金融领域的应用",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 44.43,
+        "total_nodes": 11,
+        "total_edges": 31,
+        "rag_nodes": 5,
+        "kg_nodes": 1,
+        "reasoning_chains": 1,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.473,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "document_chunk": 5,
+          "kg_match": 1,
+          "reasoning_chain": 1,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "解释知识图谱的构建方法并说明其在金融领域的应用",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 41.52,
+        "total_nodes": 23,
+        "total_edges": 51,
+        "rag_nodes": 5,
+        "kg_nodes": 5,
+        "reasoning_chains": 5,
+        "fused_nodes": 2,
+        "avg_retrieval_confidence": 0.691,
+        "fused_confidence": 0.9,
+        "backtrack_count": 0,
+        "tree_step_count": 5,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 5,
+          "kg_match": 5,
+          "reasoning_chain": 5,
+          "document_chunk": 5,
+          "fused_evidence": 2
+        }
+      }
+    },
+    {
+      "query": "知识图谱在医疗和金融两个领域分别有哪些应用?",
+      "complexity": "complex",
+      "expected_type": "QUnion",
+      "simple": {
+        "mode": "simple",
+        "query": "知识图谱在医疗和金融两个领域分别有哪些应用?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 25.83,
+        "total_nodes": 11,
+        "total_edges": 31,
+        "rag_nodes": 5,
+        "kg_nodes": 1,
+        "reasoning_chains": 1,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.47,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 0,
+        "node_types": {
+          "sub_query": 1,
+          "document_chunk": 5,
+          "kg_match": 1,
+          "reasoning_chain": 1,
+          "fused_evidence": 3
+        }
+      },
+      "qdmr": {
+        "mode": "qdmr",
+        "query": "知识图谱在医疗和金融两个领域分别有哪些应用?",
+        "success": true,
+        "error": null,
+        "elapsed_seconds": 53.33,
+        "total_nodes": 16,
+        "total_edges": 42,
+        "rag_nodes": 5,
+        "kg_nodes": 2,
+        "reasoning_chains": 2,
+        "fused_nodes": 3,
+        "avg_retrieval_confidence": 0.566,
+        "fused_confidence": 0.5,
+        "backtrack_count": 0,
+        "tree_step_count": 3,
+        "node_types": {
+          "query_classification": 1,
+          "tree_step": 3,
+          "kg_match": 2,
+          "reasoning_chain": 2,
+          "document_chunk": 5,
+          "fused_evidence": 3
+        }
+      }
+    }
+  ]
+}

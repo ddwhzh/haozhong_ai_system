@@ -17,6 +17,7 @@ Design:
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -83,6 +84,9 @@ class TreeExplorer:
     ) -> List[EvidenceNode]:
         """Explore all QDMR steps with branch-level backtracking.
 
+        Independent steps (no unresolved dependencies) are executed in
+        parallel via asyncio.gather for reduced latency.
+
         Args:
             steps: Ordered QDMR decomposition steps.
             classification: Query classification result.
@@ -94,117 +98,221 @@ class TreeExplorer:
         """
         all_nodes: List[EvidenceNode] = []
         step_results: Dict[int, List[EvidenceNode]] = {}
+        completed_indices: set[int] = set()
 
-        for step in steps:
-            logger.info(
-                "tree_step_start",
-                step=step.step_idx,
-                question=step.question[:80],
-                strategy=step.retrieval_strategy,
-            )
+        # Group steps into waves: each wave contains steps whose
+        # dependencies are already satisfied by previous waves.
+        waves = self._build_execution_waves(steps)
 
-            # Create a sub-query evidence node for this step
-            step_node = evidence_graph.add_evidence(
-                evidence=Evidence(
-                    content=step.question,
-                    content_type="tree_step",
-                    source="tree_explorer",
-                    metadata={
-                        "step_idx": step.step_idx,
-                        "operator": step.operator,
-                        "retrieval_strategy": step.retrieval_strategy,
-                        "depends_on": step.depends_on,
-                        "q_type": classification.q_type.value,
-                    },
-                ),
-                belief=Belief(
-                    content=f"QDMR step {step.step_idx}: {step.operator} - {step.question}",
-                    confidence=0.9,
-                    source_agent="retrieval_agent",
-                ),
-                intent=Intent(
-                    intent_type=IntentType.DECOMPOSE_QUERY,
-                    description=(
-                        f"QDMR step {step.step_idx}: {step.operator} - {step.question}"
-                    ),
-                    source_agent="retrieval_agent",
-                ),
-                parent_node_ids=[parent_node.node_id],
-                relation=EdgeRelation.DECOMPOSES_TO,
-                tags=["tree_step", step.operator, classification.q_type.value.lower()],
-            )
-            all_nodes.append(step_node)
-
-            # Determine strategies to try
-            primary = self._resolve_strategy(
-                step.retrieval_strategy, classification.strategy.primary_strategy
-            )
-            fallback = self._resolve_strategy(
-                step.retrieval_strategy, classification.strategy.fallback_strategy
-            )
-
-            # Try primary branch
-            branch_nodes = await self._execute_branch(
-                step, step_node, evidence_graph, primary
-            )
-            quality = self._evaluate_quality(branch_nodes)
-
-            logger.info(
-                "tree_branch_result",
-                step=step.step_idx,
-                strategy=primary,
-                node_count=len(branch_nodes),
-                quality=round(quality, 3),
-            )
-
-            # Backtrack if quality is low
-            if quality < self.backtrack_threshold and fallback != primary:
+        for wave_idx, wave in enumerate(waves):
+            if len(wave) == 1:
+                # Single step — run directly (no gather overhead)
+                nodes = await self._explore_single_step(
+                    wave[0], classification, evidence_graph,
+                    parent_node, step_results,
+                )
+                all_nodes.extend(nodes)
+                step_results[wave[0].step_idx] = wave[0].results
+                completed_indices.add(wave[0].step_idx)
+            else:
+                # Multiple independent steps — run in parallel
                 logger.info(
-                    "tree_backtrack",
-                    step=step.step_idx,
-                    from_strategy=primary,
-                    to_strategy=fallback,
-                    quality=round(quality, 3),
-                    threshold=self.backtrack_threshold,
+                    "tree_parallel_wave",
+                    wave=wave_idx + 1,
+                    step_count=len(wave),
+                    step_indices=[s.step_idx for s in wave],
                 )
-                step.backtracked = True
+                coros = [
+                    self._explore_single_step(
+                        step, classification, evidence_graph,
+                        parent_node, step_results,
+                    )
+                    for step in wave
+                ]
+                results = await asyncio.gather(*coros, return_exceptions=True)
 
-                fallback_nodes = await self._execute_branch(
-                    step, step_node, evidence_graph, fallback
-                )
-                fallback_quality = self._evaluate_quality(fallback_nodes)
-
-                logger.info(
-                    "tree_fallback_result",
-                    step=step.step_idx,
-                    strategy=fallback,
-                    node_count=len(fallback_nodes),
-                    quality=round(fallback_quality, 3),
-                )
-
-                # Keep the best branch
-                if fallback_quality > quality:
-                    branch_nodes = fallback_nodes
-                    quality = fallback_quality
-                else:
-                    # Keep both (original had some results too)
-                    branch_nodes = branch_nodes + fallback_nodes
-
-            step.results = branch_nodes
-            step.quality = quality
-            step.explored = True
-            step_results[step.step_idx] = branch_nodes
-            all_nodes.extend(branch_nodes)
-
-            logger.info(
-                "tree_step_complete",
-                step=step.step_idx,
-                total_nodes=len(branch_nodes),
-                quality=round(quality, 3),
-                backtracked=step.backtracked,
-            )
+                for step, result in zip(wave, results):
+                    if isinstance(result, BaseException):
+                        logger.exception(
+                            "tree_parallel_step_failed",
+                            step=step.step_idx,
+                            error=str(result),
+                        )
+                        step.explored = True
+                        step.quality = 0.0
+                        continue
+                    all_nodes.extend(result)
+                    step_results[step.step_idx] = step.results
+                    completed_indices.add(step.step_idx)
 
         return all_nodes
+
+    async def _explore_single_step(
+        self,
+        step: TreeStep,
+        classification: ClassificationResult,
+        evidence_graph: EvidenceGraph,
+        parent_node: EvidenceNode,
+        step_results: Dict[int, List[EvidenceNode]],
+    ) -> List[EvidenceNode]:
+        """Explore a single QDMR step with backtracking.
+
+        Returns:
+            All nodes produced by this step (step_node + retrieval results).
+        """
+        nodes: List[EvidenceNode] = []
+
+        logger.info(
+            "tree_step_start",
+            step=step.step_idx,
+            question=step.question[:80],
+            strategy=step.retrieval_strategy,
+        )
+
+        # Create a sub-query evidence node for this step
+        step_node = evidence_graph.add_evidence(
+            evidence=Evidence(
+                content=step.question,
+                content_type="tree_step",
+                source="tree_explorer",
+                metadata={
+                    "step_idx": step.step_idx,
+                    "operator": step.operator,
+                    "retrieval_strategy": step.retrieval_strategy,
+                    "depends_on": step.depends_on,
+                    "q_type": classification.q_type.value,
+                },
+            ),
+            belief=Belief(
+                content=f"QDMR step {step.step_idx}: {step.operator} - {step.question}",
+                confidence=0.9,
+                source_agent="retrieval_agent",
+            ),
+            intent=Intent(
+                intent_type=IntentType.DECOMPOSE_QUERY,
+                description=(
+                    f"QDMR step {step.step_idx}: {step.operator} - {step.question}"
+                ),
+                source_agent="retrieval_agent",
+            ),
+            parent_node_ids=[parent_node.node_id],
+            relation=EdgeRelation.DECOMPOSES_TO,
+            tags=["tree_step", step.operator, classification.q_type.value.lower()],
+        )
+        nodes.append(step_node)
+
+        # Determine strategies to try
+        primary = self._resolve_strategy(
+            step.retrieval_strategy, classification.strategy.primary_strategy
+        )
+        fallback = self._resolve_strategy(
+            step.retrieval_strategy, classification.strategy.fallback_strategy
+        )
+
+        # Try primary branch
+        branch_nodes = await self._execute_branch(
+            step, step_node, evidence_graph, primary
+        )
+        quality = self._evaluate_quality(branch_nodes)
+
+        logger.info(
+            "tree_branch_result",
+            step=step.step_idx,
+            strategy=primary,
+            node_count=len(branch_nodes),
+            quality=round(quality, 3),
+        )
+
+        # Backtrack if quality is low
+        if quality < self.backtrack_threshold and fallback != primary:
+            logger.info(
+                "tree_backtrack",
+                step=step.step_idx,
+                from_strategy=primary,
+                to_strategy=fallback,
+                quality=round(quality, 3),
+                threshold=self.backtrack_threshold,
+            )
+            step.backtracked = True
+
+            fallback_nodes = await self._execute_branch(
+                step, step_node, evidence_graph, fallback
+            )
+            fallback_quality = self._evaluate_quality(fallback_nodes)
+
+            logger.info(
+                "tree_fallback_result",
+                step=step.step_idx,
+                strategy=fallback,
+                node_count=len(fallback_nodes),
+                quality=round(fallback_quality, 3),
+            )
+
+            # Keep the best branch
+            if fallback_quality > quality:
+                branch_nodes = fallback_nodes
+                quality = fallback_quality
+            else:
+                # Keep both (original had some results too)
+                branch_nodes = branch_nodes + fallback_nodes
+
+        step.results = branch_nodes
+        step.quality = quality
+        step.explored = True
+        nodes.extend(branch_nodes)
+
+        logger.info(
+            "tree_step_complete",
+            step=step.step_idx,
+            total_nodes=len(branch_nodes),
+            quality=round(quality, 3),
+            backtracked=step.backtracked,
+        )
+
+        return nodes
+
+    @staticmethod
+    def _build_execution_waves(steps: List[TreeStep]) -> List[List[TreeStep]]:
+        """Group steps into execution waves based on dependencies.
+
+        Steps with no dependencies (or all dependencies resolved in prior
+        waves) are grouped into the same wave for parallel execution.
+
+        Returns:
+            Ordered list of waves; each wave is a list of independent steps.
+        """
+        if not steps:
+            return []
+
+        resolved: set[int] = set()
+        remaining = list(steps)
+        waves: List[List[TreeStep]] = []
+
+        while remaining:
+            wave: List[TreeStep] = []
+            still_remaining: List[TreeStep] = []
+
+            for step in remaining:
+                deps = set(step.depends_on)
+                if deps.issubset(resolved):
+                    wave.append(step)
+                else:
+                    still_remaining.append(step)
+
+            if not wave:
+                # Circular dependency or unresolvable — force remaining into one wave
+                logger.warning(
+                    "tree_unresolvable_deps",
+                    remaining_steps=[s.step_idx for s in still_remaining],
+                )
+                waves.append(still_remaining)
+                break
+
+            waves.append(wave)
+            resolved.update(s.step_idx for s in wave)
+            remaining = still_remaining
+
+        return waves
 
     async def _execute_branch(
         self,

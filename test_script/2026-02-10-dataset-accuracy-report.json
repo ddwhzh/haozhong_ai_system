@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "dataset_size": 10,
+    "passed": 7,
+    "failed": 3,
+    "accuracy_percent": 70.0,
+    "avg_latency_seconds": 105.84,
+    "fallback_count": 0,
+    "timestamp_unix": 1770880308
+  },
+  "results": [
+    {
+      "query": "什么是知识图谱?",
+      "fallback": false,
+      "group_hits": 1,
+      "required_hits": 2,
+      "matched_keywords": [
+        "图结构"
+      ],
+      "is_correct": false,
+      "latency_seconds": 101.44,
+      "phase_completed": "done",
+      "response_preview": "## 知识图谱构建方式  **问题:** 知识图谱有哪两种构建方式？  **构建方式** (置信度=1.00): 自顶向下和自底向上 (证据ID: 78a2a4bc-7bd2-48bd-9b50-68fe0e79536c)   ## 知识图谱技术发展  **问题:** 知识图谱技术是如何发展的？  **发展** (置信度=0.66): 知识图谱技术发展是一个持续渐进的过程。从上个世纪七八十年代的知识工程兴盛开始，学术界和工业界推出了一系列知识库，直到2012年Google提出知识图谱，知识图谱技术发展迅速，知识图谱的内涵远远超越了其作为语义网络的狭义内涵。当下，在更多实际场合下，知识图谱是作为一种技术体系，指代大数据时代知识工程的一系列代表性技术进展的总和。 (证据ID: 7398574c-b35a-4883-",
+      "note": "定义类基础问题"
+    },
+    {
+      "query": "知识图谱由哪些核心组件构成?",
+      "fallback": false,
+      "group_hits": 3,
+      "required_hits": 2,
+      "matched_keywords": [
+        "实体",
+        "关系",
+        "三元组"
+      ],
+      "is_correct": true,
+      "latency_seconds": 102.69,
+      "phase_completed": "done",
+      "response_preview": "## 知识图谱核心组件  **问题:** 知识图谱的基本单位是什么？  **基本单位** (置信度=0.82): 实体（Entity）-关系（Relationship）-实体（Entity）构成的三元组 (证据ID: 487341ca-21e6-4408-9c20-b4c10d593f5d, 48494280-c0f3-4537-9db0-f7a5e029db96)   ## 知识图谱核心组件  **问题:** 知识图谱的体系架构包括哪些部分？  **体系架构** (置信度=0.90): 知识获取、知识融合和知识计算与知识应用 (证据ID: e3044395-f925-48d1-9222-496de04b73f5, 0c913be2-5e08-4449-bb28-6a54c7fae608, 6224350a-a",
+      "note": "组件枚举"
+    },
+    {
+      "query": "Neo4j使用什么查询语言?",
+      "fallback": false,
+      "group_hits": 1,
+      "required_hits": 1,
+      "matched_keywords": [
+        "cypher"
+      ],
+      "is_correct": true,
+      "latency_seconds": 76.69,
+      "phase_completed": "done",
+      "response_preview": "## 查询语言  **问题:** Neo4j数据库使用的查询语言是什么？  **查询语言** (置信度=1.00): Cypher (证据ID: 3ca58619-9f99-444c-b4c4-ed224a99c3e6, 9d04fec1-043f-4cdf-9fc7-727e1415e256)   ## 查询语言  **问题:** Neo4j的查询语言有什么特点？  **查询语言特点** (置信度=0.82): Cypher是一个申明式的语言。对比命令式语言如Java和脚本语言如Gremlin和JRuby，它的焦点在于从图中如何找回（what to retrieve），而不是怎么去做。这使得在不对用户公布的实现细节里关心的是怎么优化查询。Cypher是描述性的图形查询语言，语法简单，功能强大，由于Neo4j在",
+      "note": "单事实检索"
+    },
+    {
+      "query": "RAG的典型流程是什么?",
+      "fallback": false,
+      "group_hits": 2,
+      "required_hits": 3,
+      "matched_keywords": [
+        "query",
+        "generation"
+      ],
+      "is_correct": false,
+      "latency_seconds": 116.73,
+      "phase_completed": "done",
+      "response_preview": "## RAG流程应用  **问题:** RAG的流程在实际应用中是如何体现的？  **应用场景1** (置信度=0.74): 通过自有垂域数据库检索相关信息，然后合并成为提示模板，给大模型润色生成回答。 (证据ID: 1c9f3baf-04f9-488e-93cb-79c9d4a61008)  **应用场景2** (置信度=0.66): 使用来自私有或专有数据源的信息来补充文本生成的技术。 (证据ID: f367eeb9-cbcd-443b-a0bb-bf5d6af8f0e7)  **应用场景3** (置信度=0.58): 结合检索与生成技术的框架，旨在通过引入外部知识增强生成模型的性能。 (证据ID: bf4a4bb1-5cee-45df-a488-6b0eb62dfb3a)   ## RAG流程概述  **",
+      "note": "流程型问题"
+    },
+    {
+      "query": "高级RAG优化策略有哪些?",
+      "fallback": false,
+      "group_hits": 0,
+      "required_hits": 2,
+      "matched_keywords": [],
+      "is_correct": false,
+      "latency_seconds": 122.34,
+      "phase_completed": "done",
+      "response_preview": "## 高级RAG优化策略  **问题:** 如何进行RAG系统的性能监控？  **RAG系统性能监控方法** (置信度=0.66): 高级RAG相比于初级RAG，基于初级RAG范式，围绕着知识检索做优化，新增了检索前、检索中以及检索后的优化策略，用于解决索引、检索和生成的问题。 (证据ID: d598c646-48c7-47c7-a1c2-5c86452c723e)   ## 高级RAG优化策略  **问题:** 检索前优化策略有哪些？  **检索前优化策略** (置信度=0.52): 高级RAG相比于初级RAG，基于初级RAG范式，围绕着知识检索做优化，新增了检索前、检索中以及检索后的优化策略，用于解决索引、检索和生成的问题。 (证据ID: 84081e50-10e7-4872-9c1e-b11dd79187",
+      "note": "多点列举"
+    },
+    {
+      "query": "Fast R-CNN的核心思想是什么?",
+      "fallback": false,
+      "group_hits": 1,
+      "required_hits": 1,
+      "matched_keywords": [
+        "proposal"
+      ],
+      "is_correct": true,
+      "latency_seconds": 93.22,
+      "phase_completed": "done",
+      "response_preview": "## 核心思想  **问题:** Fast R-CNN的核心思想是什么？  **核心思想** (置信度=0.82): Fast R-CNN的核心思想是在RCNN和SPPNet的基础上进行了改进，实现了端到端的训练，基于CGG16网络，其训练速度比RCNN快了9倍，测试速度快了213倍。它不需要对每个Region Proposal都进行特征提取，而是对整个图片进行一次特征提取，然后每个RoI找到对应的特征区域。由于每个RoI大小不一样，因此得到的特征区域也是不一样，所有需要通过一个RoI Pool层把它们变成大小一样，之后就没有什么不同了。 (证据ID: f90f7b26-fab9-42f4-a842-61356a5026d3, f5314ff7-1716-49ed-abf1-025ea228dfc2)   ##",
+      "note": "模型概念"
+    },
+    {
+      "query": "DETR借助什么算法进行最优匹配?",
+      "fallback": false,
+      "group_hits": 1,
+      "required_hits": 1,
+      "matched_keywords": [
+        "匈牙利算法"
+      ],
+      "is_correct": true,
+      "latency_seconds": 91.4,
+      "phase_completed": "done",
+      "response_preview": "## 算法原理  **问题:** DETR模型中用于最优匹配的算法是什么？  **algorithm name** (置信度=0.66): bipartite matching算法 (证据ID: 0be151ec-f203-4822-90a6-1ac60a62af22)   ## 模型特点  **问题:** DETR模型在目标检测中使用了哪些核心算法？  **core algorithms** (置信度=0.82): 基于Transformer的全新网络结构 (证据ID: 3aad062a-da6d-4571-b475-f3ad90fc1cde) ",
+      "note": "算法问答"
+    },
+    {
+      "query": "LangGraph的核心概念有哪些?",
+      "fallback": false,
+      "group_hits": 4,
+      "required_hits": 3,
+      "matched_keywords": [
+        "state",
+        "node",
+        "edge",
+        "checkpoint"
+      ],
+      "is_correct": true,
+      "latency_seconds": 144.13,
+      "phase_completed": "done",
+      "response_preview": "## LangGraph核心概念  **问题:** LangGraph是如何构建智能体工流架构的？  **构建架构方式** (置信度=0.90): LangGraph通过图结构（Graph）实现复杂的动态工作流，尤其擅长与大型语言模型（LLMs）结合，支持循环、持久性、人工干预等核心功能。它通过StateGraph和节点、边的定义，实现对LLM任务的细化控制。LangGraph还提供了Java版本的LangGraph4J实现，展示了如何使用LangChain4J和LangGraph4J将AI大模型引入Java项目，为构建复杂的多智能体应用提供了全面的技术指导。 (证据ID: e4e81ef6-965b-4593-bf7b-c340548f1dc7, 43cb6a1d-a713-4e16-87b6-40cb0a2",
+      "note": "框架概念列表"
+    },
+    {
+      "query": "多Agent系统有哪些优势?",
+      "fallback": false,
+      "group_hits": 2,
+      "required_hits": 2,
+      "matched_keywords": [
+        "可扩展",
+        "协作"
+      ],
+      "is_correct": true,
+      "latency_seconds": 92.2,
+      "phase_completed": "done",
+      "response_preview": "## 多Agent系统的优势  **问题:** 多Agent系统在处理复杂、开放式问题时，有哪些结构上的优势？  **结构优势** (置信度=0.74): 多Agent系统在结构上的优势包括：通过角色定义，赋予每个Agent不同的职责，使其可以根据专长承担不同的子任务，高效的完成复杂任务的处理；同时，多Agent天然具有可扩展性，通过引入新的Agent即可实现无缝扩展。 (证据ID: ba03585d-1d9b-4c39-8347-971aa222a1a9)   ## 多Agent系统的概念  **问题:** 多Agent系统是由什么组成的？  **组成元素**: [证据不足]  结论: 当前检索证据不足以直接回答该子问题, 请补充该领域资料后重试。  ## 多Agent系统的应用  **问题:** 多Agen",
+      "note": "优点列举"
+    },
+    {
+      "query": "知识图谱在医疗和金融领域分别有哪些应用?",
+      "fallback": false,
+      "group_hits": 4,
+      "required_hits": 2,
+      "matched_keywords": [
+        "医疗",
+        "金融",
+        "诊断",
+        "风控"
+      ],
+      "is_correct": true,
+      "latency_seconds": 117.61,
+      "phase_completed": "done",
+      "response_preview": "## 金融领域应用  **问题:** 知识图谱在金融领域有哪些具体应用？  **应用1** (置信度=0.90): 基于产业链知识图谱的风控、反欺诈、智能投研，智能投顾、自动化报告等 (证据ID: aa0ad5a5-6a5d-487c-ad40-36982b6a181e)  **应用2** (置信度=0.82): 金融监管与合规：知识图谱可以应用于金融监管和合规领域。通过整合和分析金融法规、监管规定、交易数据等，构建知识图谱，为监管机构和金融机构提供智能化的合规支持，包括合规风险评估、监测与事后审计等 (证据ID: b468af2d-4448-4674-a98c-0e0feb1193ab)  **应用3** (置信度=0.74): 知识图谱因其自身的图展示、图挖掘、图模型计算优势，可帮助金融从业人员进行业务场景",
+      "note": "跨领域应用"
+    }
+  ]
+}

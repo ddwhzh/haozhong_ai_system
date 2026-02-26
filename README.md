@@ -201,11 +201,22 @@ uv run pytest tests/smoke -q
 
 ## 文档索引
 
-- 总体需求: `docs/2026-02-06-v1.0-需求文档.md`
-- 系统设计: `docs/2026-02-06-v1.0-系统设计文档.md`
-- 详细设计: `docs/2026-02-06-v1.0-详细设计文档.md`
-- 接口文档: `docs/2026-02-06-v1.0-接口文档.md`
+**系统级**:
+- 总体需求: `docs/system/2026-02-06-v1.0-需求文档.md`
+- 系统设计: `docs/system/2026-02-06-v1.0-系统设计文档.md`
+- 详细设计: `docs/system/2026-02-06-v1.0-详细设计文档.md`
+- 接口文档: `docs/system/2026-02-06-v1.0-接口文档.md`
+- 功能文档: `docs/system/2026-02-06-v1.0-功能文档.md`
+
+**Agent 专项**:
+- 检索Agent: `docs/agents/retrieval-agent/`
+- 生成Agent: `docs/agents/generation-agent/`
+- 评估Agent: `docs/agents/evaluation-agent/`
+- 研究Agent: `docs/agents/research-agent/`
 - 检索链路专项: `docs/agents/retrieval-agent/2026-02-10-v1.1-Brave结果进入RAG与KG链路详解.md`
+
+**变更日志**:
+- `docs/changelog/`
 
 ## 安全说明
 

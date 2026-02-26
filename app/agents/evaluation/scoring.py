@@ -21,21 +21,30 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from app.agents.evaluation.content_quality import (
+    ContentQualityResult,
+    apply_quality_penalty,
+    assess_content_quality,
+)
 from app.core.config import settings
 from app.core.logging import logger
 
 
 class ScoringFunction:
-    """Hybrid dense + sparse scoring with denoising."""
+    """Hybrid dense + sparse scoring with denoising and quality pre-filter."""
 
     def __init__(
         self,
         sparse_weight: float = 0.3,
         denoising_strength: float = 0.1,
+        quality_threshold: float | None = None,
     ) -> None:
         self.sparse_weight = sparse_weight
         self.dense_weight = 1.0 - sparse_weight
         self.denoising_strength = denoising_strength
+        self.quality_threshold = quality_threshold or getattr(
+            settings, "EVALUATION_QUALITY_THRESHOLD", 0.4
+        )
 
     def score(
         self,
@@ -43,11 +52,27 @@ class ScoringFunction:
         doc_embedding: List[float],
         query_tokens: List[str],
         doc_tokens: List[str],
+        query_text: str = "",
+        doc_text: str = "",
     ) -> Dict[str, float]:
-        """Compute hybrid score with denoising.
+        """Compute hybrid score with denoising and quality pre-filter.
 
-        Returns dict with: dense_score, sparse_score, combined_score, asymmetry_factor
+        When query_text or doc_text is provided, a content quality check
+        runs first. If either side is detected as gibberish/random chars,
+        the combined score is penalized.
+
+        Returns dict with: dense_score, sparse_score, combined_score,
+            asymmetry_factor, query_quality, doc_quality
         """
+        # ── FR-6: Content quality pre-filter ─────────────────────────
+        query_quality: ContentQualityResult | None = None
+        doc_quality: ContentQualityResult | None = None
+
+        if query_text:
+            query_quality = assess_content_quality(query_text, self.quality_threshold)
+        if doc_text:
+            doc_quality = assess_content_quality(doc_text, self.quality_threshold)
+
         # Dense component with denoising
         dense_score = self._denoised_cosine(query_embedding, doc_embedding)
 
@@ -56,6 +81,12 @@ class ScoringFunction:
 
         # Combined
         combined = self.dense_weight * dense_score + self.sparse_weight * sparse_score
+
+        # Apply quality penalty if either side is low quality
+        if query_quality and query_quality.is_low_quality:
+            combined = apply_quality_penalty(combined, query_quality)
+        if doc_quality and doc_quality.is_low_quality:
+            combined = apply_quality_penalty(combined, doc_quality)
 
         # Asymmetry factor: how different is score(q,d) from score(d,q)?
         reverse_sparse = self._sparse_score(doc_tokens, query_tokens)
@@ -66,6 +97,8 @@ class ScoringFunction:
             "sparse_score": round(sparse_score, 4),
             "combined_score": round(combined, 4),
             "asymmetry_factor": round(asymmetry, 4),
+            "query_quality": round(query_quality.quality_score, 4) if query_quality else 1.0,
+            "doc_quality": round(doc_quality.quality_score, 4) if doc_quality else 1.0,
         }
 
     def _denoised_cosine(
@@ -160,7 +193,7 @@ class ScoringFunction:
     ) -> np.ndarray:
         """Compute score matrix: queries x documents.
 
-        Each query/document dict has: embedding (list[float]), tokens (list[str]).
+        Each query/document dict has: embedding, tokens, and optionally content.
         Returns: np.ndarray of shape (len(queries), len(documents)).
         """
         n_q = len(queries)
@@ -174,6 +207,8 @@ class ScoringFunction:
                     doc_embedding=d.get("embedding", []),
                     query_tokens=q.get("tokens", []),
                     doc_tokens=d.get("tokens", []),
+                    query_text=q.get("content", ""),
+                    doc_text=d.get("content", ""),
                 )
                 matrix[i, j] = result["combined_score"]
 

@@ -6,10 +6,23 @@ subgraph extraction for the retrieval agent's depth-first pipeline.
 
 from __future__ import annotations
 
-import traceback
+from time import monotonic
 from typing import Any, Dict, List, Optional
 
-from neo4j import AsyncGraphDatabase, AsyncDriver
+from neo4j import AsyncDriver, AsyncGraphDatabase
+from neo4j.exceptions import (
+    AuthError,
+    Neo4jError,
+    ServiceUnavailable,
+    SessionExpired,
+)
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.core.config import settings
 from app.core.logging import logger
@@ -20,34 +33,84 @@ class Neo4jClient:
 
     def __init__(self) -> None:
         self._driver: Optional[AsyncDriver] = None
+        self._reconnect_blocked_until: float = 0.0
+        self._last_connection_error: str = ""
+
+    @retry(
+        stop=stop_after_attempt(max(1, settings.NEO4J_CONNECT_MAX_RETRIES)),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        retry=retry_if_exception_type(
+            (ServiceUnavailable, SessionExpired, OSError)
+        ),
+        before_sleep=before_sleep_log(logger, "WARNING"),
+        reraise=True,
+    )
+    async def _verify_connectivity_with_retry(self) -> None:
+        """Verify Neo4j connectivity with exponential backoff."""
+        if self._driver is None:
+            raise RuntimeError("neo4j_driver_not_initialized")
+        await self._driver.verify_connectivity()
+
+    async def _reset_driver(self) -> None:
+        """Close and reset driver instance safely."""
+        if self._driver is None:
+            return
+        driver = self._driver
+        self._driver = None
+        try:
+            await driver.close()
+        except (ServiceUnavailable, SessionExpired, OSError, RuntimeError) as e:
+            logger.warning("neo4j_driver_close_failed", error=str(e))
 
     async def connect(self) -> None:
         """Initialise the Neo4j driver."""
         if self._driver is not None:
             return
+        now = monotonic()
+        if now < self._reconnect_blocked_until:
+            cooldown_remaining = round(self._reconnect_blocked_until - now, 2)
+            logger.warning(
+                "neo4j_reconnect_cooldown_active",
+                cooldown_seconds_remaining=cooldown_remaining,
+                last_error=self._last_connection_error[:300],
+            )
+            raise ServiceUnavailable("neo4j reconnect cooldown active")
         try:
             self._driver = AsyncGraphDatabase.driver(
                 settings.NEO4J_URI,
                 auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
                 max_connection_pool_size=settings.NEO4J_POOL_SIZE,
             )
-            # Verify connectivity
-            await self._driver.verify_connectivity()
+            await self._verify_connectivity_with_retry()
+            self._reconnect_blocked_until = 0.0
+            self._last_connection_error = ""
             logger.info("neo4j_connected", uri=settings.NEO4J_URI)
-        except Exception as e:
-            logger.error(
+        except (
+            ServiceUnavailable,
+            SessionExpired,
+            AuthError,
+            Neo4jError,
+            OSError,
+        ) as e:
+            self._last_connection_error = str(e)
+            self._reconnect_blocked_until = (
+                monotonic() + settings.NEO4J_RETRY_COOLDOWN_SECONDS
+            )
+            await self._reset_driver()
+            logger.exception(
                 "neo4j_connection_failed",
+                uri=settings.NEO4J_URI,
+                cooldown_seconds=settings.NEO4J_RETRY_COOLDOWN_SECONDS,
                 error=str(e),
-                traceback=traceback.format_exc(),
             )
             raise
 
     async def close(self) -> None:
         """Close the driver."""
-        if self._driver is not None:
-            await self._driver.close()
-            self._driver = None
-            logger.info("neo4j_disconnected")
+        if self._driver is None:
+            return
+        await self._reset_driver()
+        logger.info("neo4j_disconnected")
 
     async def health_check(self) -> bool:
         """Return True if Neo4j is reachable."""
@@ -56,7 +119,14 @@ class Neo4jClient:
                 await self.connect()
             await self._driver.verify_connectivity()
             return True
-        except Exception:
+        except (
+            ServiceUnavailable,
+            SessionExpired,
+            AuthError,
+            Neo4jError,
+            OSError,
+            RuntimeError,
+        ):
             return False
 
     # ── Query execution ──────────────────────────────────────────────────
@@ -70,11 +140,16 @@ class Neo4jClient:
         """Run a read transaction and return list of record dicts."""
         if self._driver is None:
             await self.connect()
-
-        async with self._driver.session(database=database or settings.NEO4J_DATABASE) as session:
-            result = await session.run(query, parameters or {})
-            records = await result.data()
-            return records
+        try:
+            async with self._driver.session(
+                database=database or settings.NEO4J_DATABASE
+            ) as session:
+                result = await session.run(query, parameters or {})
+                records = await result.data()
+                return records
+        except (ServiceUnavailable, SessionExpired, OSError, Neo4jError):
+            await self._reset_driver()
+            raise
 
     async def execute_write(
         self,
@@ -85,11 +160,16 @@ class Neo4jClient:
         """Run a write transaction and return list of record dicts."""
         if self._driver is None:
             await self.connect()
-
-        async with self._driver.session(database=database or settings.NEO4J_DATABASE) as session:
-            result = await session.run(query, parameters or {})
-            records = await result.data()
-            return records
+        try:
+            async with self._driver.session(
+                database=database or settings.NEO4J_DATABASE
+            ) as session:
+                result = await session.run(query, parameters or {})
+                records = await result.data()
+                return records
+        except (ServiceUnavailable, SessionExpired, OSError, Neo4jError):
+            await self._reset_driver()
+            raise
 
     # ── BFS multi-hop traversal ──────────────────────────────────────────
 
@@ -138,8 +218,8 @@ class Neo4jClient:
                 return {"nodes": [], "edges": [], "depth": 0}
 
             return self._parse_bfs_result(records, max_hops)
-        except Exception as e:
-            logger.error(
+        except (ServiceUnavailable, SessionExpired, OSError, Neo4jError) as e:
+            logger.warning(
                 "bfs_traverse_failed",
                 start_nodes=start_node_ids,
                 max_hops=max_hops,

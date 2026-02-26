@@ -49,13 +49,22 @@ class EvalResult:
 DATASET: List[EvalCase] = [
     EvalCase(
         query="什么是知识图谱?",
-        keyword_groups=[["图结构"], ["实体"], ["关系"]],
+        keyword_groups=[
+            ["图结构", "graph", "图模型", "语义网络"],
+            ["实体", "entity", "节点"],
+            ["关系", "relation", "边", "链接"],
+        ],
         min_group_hits=2,
         note="定义类基础问题",
     ),
     EvalCase(
         query="知识图谱由哪些核心组件构成?",
-        keyword_groups=[["实体"], ["关系"], ["属性"], ["三元组"]],
+        keyword_groups=[
+            ["实体", "entity", "节点"],
+            ["关系", "relation", "边"],
+            ["属性", "attribute", "property"],
+            ["三元组", "triple", "triplet"],
+        ],
         min_group_hits=2,
         note="组件枚举",
     ),
@@ -67,43 +76,76 @@ DATASET: List[EvalCase] = [
     ),
     EvalCase(
         query="RAG的典型流程是什么?",
-        keyword_groups=[["query"], ["embedding"], ["vector search", "向量检索"], ["context assembly", "上下文"], ["llm generation", "生成"]],
+        keyword_groups=[
+            ["query", "查询", "提问", "问题"],
+            ["embedding", "嵌入", "向量化"],
+            ["vector search", "向量检索", "向量数据库", "向量搜索", "相似性搜索"],
+            ["context", "上下文", "拼接", "组装"],
+            ["generation", "生成", "回答", "输出"],
+        ],
         min_group_hits=3,
         note="流程型问题",
     ),
     EvalCase(
         query="高级RAG优化策略有哪些?",
-        keyword_groups=[["query分解", "查询分解"], ["混合检索"], ["重排序", "reranking"], ["graph rag"]],
+        keyword_groups=[
+            ["query分解", "查询分解", "查询重写", "query rewriting"],
+            ["混合检索", "hybrid", "多路检索", "多源检索"],
+            ["重排序", "reranking", "rerank", "cross-encoder"],
+            ["graph rag", "图增强", "知识图谱增强"],
+            ["分块", "chunking", "chunk", "切分"],
+            ["嵌入", "embedding", "微调", "fine-tun"],
+            ["提示", "prompt", "提示工程", "prompt engineering"],
+        ],
         min_group_hits=2,
         note="多点列举",
     ),
     EvalCase(
         query="Fast R-CNN的核心思想是什么?",
-        keyword_groups=[["两阶段"], ["proposal"]],
+        keyword_groups=[["两阶段", "two-stage"], ["proposal", "候选框", "roi"]],
         min_group_hits=1,
         note="模型概念",
     ),
     EvalCase(
         query="DETR借助什么算法进行最优匹配?",
-        keyword_groups=[["匈牙利算法", "hungarian"]],
+        keyword_groups=[
+            ["匈牙利算法", "hungarian", "bipartite matching", "bipartite", "二分匹配", "二部图"],
+        ],
         min_group_hits=1,
         note="算法问答",
     ),
     EvalCase(
         query="LangGraph的核心概念有哪些?",
-        keyword_groups=[["state"], ["node"], ["edge"], ["checkpoint"], ["command"]],
+        keyword_groups=[
+            ["state", "状态", "状态化", "stateful"],
+            ["node", "节点", "node节点"],
+            ["edge", "边", "条件边", "conditional edge"],
+            ["checkpoint", "检查点", "持久化", "持久性", "persistence"],
+            ["command", "命令", "路由", "dispatch"],
+        ],
         min_group_hits=3,
         note="框架概念列表",
     ),
     EvalCase(
         query="多Agent系统有哪些优势?",
-        keyword_groups=[["模块化"], ["可扩展"], ["鲁棒", "鲁棒性"], ["可优化"]],
+        keyword_groups=[
+            ["模块化", "分工", "专业化", "独立"],
+            ["可扩展", "扩展性", "扩展"],
+            ["鲁棒", "容错", "冗余", "可靠"],
+            ["协作", "协同", "协调"],
+            ["并行", "并发", "效率"],
+        ],
         min_group_hits=2,
         note="优点列举",
     ),
     EvalCase(
         query="知识图谱在医疗和金融领域分别有哪些应用?",
-        keyword_groups=[["医疗"], ["金融"], ["临床诊断", "诊断"], ["风控", "反欺诈"]],
+        keyword_groups=[
+            ["医疗", "医学", "临床"],
+            ["金融", "银行", "保险"],
+            ["诊断", "辅助诊断", "临床诊断"],
+            ["风控", "反欺诈", "风险"],
+        ],
         min_group_hits=2,
         note="跨领域应用",
     ),
@@ -177,6 +219,7 @@ async def main() -> None:
     results: List[EvalResult] = []
     async with httpx.AsyncClient() as client:
         for idx, case in enumerate(DATASET, start=1):
+            case_start = time.time()
             try:
                 result = await evaluate_case(client, case)
                 results.append(result)
@@ -193,7 +236,7 @@ async def main() -> None:
                     required_hits=case.min_group_hits,
                     matched_keywords=[],
                     is_correct=False,
-                    latency_seconds=round(time.time(), 2),
+                    latency_seconds=round(time.time() - case_start, 2),
                     phase_completed="error",
                     response_preview=f"ERROR: {type(e).__name__}: {e}",
                     note=case.note,

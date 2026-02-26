@@ -41,6 +41,15 @@ class IntentType(str, Enum):
     MATCH = "match"                     # "I'm performing Hungarian matching"
     OPTIMIZE_PROMPT = "optimize_prompt" # "I'm optimizing a prompt via auto-prompt"
 
+    # Research agent intents
+    RESEARCH_SCOUT = "research_scout"           # "I'm exploring a research domain"
+    RESEARCH_SURVEY = "research_survey"         # "I'm retrieving academic literature"
+    RESEARCH_SYNTHESIZE = "research_synthesize" # "I'm synthesizing knowledge"
+    RESEARCH_DESIGN = "research_design"         # "I'm designing an experiment"
+    RESEARCH_EXECUTE = "research_execute"       # "I'm executing experiment code"
+    RESEARCH_ANALYZE = "research_analyze"       # "I'm analyzing experiment results"
+    RESEARCH_DECIDE = "research_decide"         # "I'm deciding next research step"
+
     # Orchestration-level intents
     ROUTE = "route"                     # Gateway routing decision
     DELEGATE = "delegate"               # Delegate sub-task to another agent

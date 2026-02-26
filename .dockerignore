@@ -37,6 +37,7 @@ docs/
 
 # OS
 .DS_Store
+._*
 Thumbs.db
 
 # Env files (injected via docker-compose)

@@ -178,3 +178,50 @@ Before modifying code:
 - LangChain Documentation: https://python.langchain.com/docs/
 - FastAPI Documentation: https://fastapi.tiangolo.com/
 - Langfuse Documentation: https://langfuse.com/docs
+
+## Cursor Cloud specific instructions
+
+### System requirements
+
+- **Python 3.13+** is required (`pyproject.toml` specifies `>=3.13`). Install from the deadsnakes PPA on Ubuntu.
+- **uv** is the package manager (not pip). Install with `pip install uv`, then `uv sync --all-extras` to install all dependencies including dev extras.
+- **Docker** is needed for PostgreSQL (pgvector) and Neo4j containers.
+
+### Services
+
+| Service | Port | Start command | Notes |
+|---|---|---|---|
+| FastAPI app | 8000 | See `make dev` or run uvicorn directly | Requires `.env.development` and Docker services running |
+| PostgreSQL + pgvector | 5432 | `sudo docker compose up -d postgres` | Create DB `HaoZhong_db` and enable `vector` extension after first start |
+| Neo4j 5.x | 7474 (HTTP), 7687 (Bolt) | `sudo docker compose up -d neo4j` | Default auth: `neo4j/neo4jpassword` (set by docker-compose default) |
+| Prometheus | 9090 | `sudo docker compose up -d prometheus` | Optional |
+| Grafana | 3000 | `sudo docker compose up -d grafana` | Optional, admin/admin |
+
+### Key gotchas
+
+- The `.env.example` sets `NEO4J_PASSWORD=neo4j`, but `docker-compose.yml` defaults to `neo4j/neo4jpassword`. The `.env.development` file must use `NEO4J_PASSWORD=neo4jpassword` to match.
+- After first `docker compose up -d postgres`, you must manually create the database and enable pgvector:
+  ```
+  sudo docker exec workspace-postgres-1 psql -U postgres -c "CREATE DATABASE \"HaoZhong_db\";"
+  sudo docker exec workspace-postgres-1 psql -U postgres -d HaoZhong_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+  ```
+- `uvloop` is not in `pyproject.toml` dependencies but is required by `make dev` (`--loop uvloop`). Install it separately: `uv pip install uvloop`.
+- The app gracefully degrades if Neo4j or Langfuse connections fail at startup (warnings only), so the server will still start.
+- `OPENAI_API_KEY` and `JWT_SECRET_KEY` must be set; the app loads them from `.env.development` via `app/core/config.py`. For local dev without a real LLM, a placeholder key is acceptable — the server starts fine, but `/api/v1/agent/chat` calls will fail.
+
+### Standard commands (see `Makefile`)
+
+- **Install deps**: `make install` (runs `pip install uv && uv sync`)
+- **Dev server**: `make dev` (sources `.env.development`, runs uvicorn with `--reload`)
+- **Lint**: `make lint` (runs `ruff check .`)
+- **Format**: `make format` (runs `ruff format .`)
+- **Tests**: `APP_ENV=development uv run pytest tests/ -v`
+
+### Running the dev server directly
+
+If `make dev` doesn't work in non-interactive shells (because `source scripts/set_env.sh` requires sourcing), use:
+```bash
+export APP_ENV=development
+set -a && source .env.development && set +a
+uv run uvicorn app.main:app --reload --port 8000 --loop uvloop
+```

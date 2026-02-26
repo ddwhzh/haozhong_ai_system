@@ -87,9 +87,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
     try:
         graph = await pipeline_graph.create()
 
+        recursion_limit = max(50, 4 * request.max_iterations + 20)
         config = {
             "configurable": {"thread_id": session_id},
             "callbacks": [get_langfuse_callback(user_id=user_id, session_id=session_id)],
+            "recursion_limit": recursion_limit,
             "metadata": {
                 "user_id": user_id,
                 "session_id": session_id,
@@ -152,9 +154,11 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         try:
             graph = await pipeline_graph.create()
 
+            recursion_limit = max(50, 4 * request.max_iterations + 20)
             config = {
                 "configurable": {"thread_id": session_id},
                 "callbacks": [get_langfuse_callback(user_id=user_id, session_id=session_id)],
+                "recursion_limit": recursion_limit,
                 "metadata": {
                     "user_id": user_id,
                     "session_id": session_id,
@@ -165,6 +169,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 input={
                     "query": request.query,
                     "messages": [{"role": "user", "content": request.query}],
+                    "current_phase": "explore",
                     "max_iterations": request.max_iterations,
                     "metadata": {"user_id": user_id, "session_id": session_id},
                 },
@@ -211,7 +216,10 @@ async def human_review(request: HumanReviewRequest) -> ChatResponse:
     try:
         graph = await pipeline_graph.create()
 
-        config = {"configurable": {"thread_id": session_id}}
+        config = {
+            "configurable": {"thread_id": session_id},
+            "recursion_limit": 50,
+        }
 
         # Resume the interrupted graph with human input
         if request.action == "approve":

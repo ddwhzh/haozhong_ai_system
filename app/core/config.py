@@ -209,6 +209,10 @@ class Settings:
         self.NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "neo4j")
         self.NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
         self.NEO4J_POOL_SIZE = int(os.getenv("NEO4J_POOL_SIZE", "50"))
+        self.NEO4J_CONNECT_MAX_RETRIES = int(os.getenv("NEO4J_CONNECT_MAX_RETRIES", "3"))
+        self.NEO4J_RETRY_COOLDOWN_SECONDS = float(
+            os.getenv("NEO4J_RETRY_COOLDOWN_SECONDS", "20")
+        )
 
         # Vector Store Configuration
         self.VECTOR_COLLECTION_NAME = os.getenv("VECTOR_COLLECTION_NAME", "documents")
@@ -252,10 +256,22 @@ class Settings:
         self.EVALUATION_API_KEY = os.getenv("EVALUATION_API_KEY", self.OPENAI_API_KEY)
         self.EVALUATION_CONFIDENCE_THRESHOLD = float(os.getenv("EVALUATION_CONFIDENCE_THRESHOLD", "0.7"))
         self.EVALUATION_SPARSE_WEIGHT = float(os.getenv("EVALUATION_SPARSE_WEIGHT", "0.3"))
+        self.EVALUATION_QUALITY_THRESHOLD = float(os.getenv("EVALUATION_QUALITY_THRESHOLD", "0.4"))
 
         # Pipeline Configuration
         self.PIPELINE_MAX_ITERATIONS = int(os.getenv("PIPELINE_MAX_ITERATIONS", "10"))
         self.HITL_ENABLED = os.getenv("HITL_ENABLED", "true").lower() in ("true", "1", "t", "yes")
+
+        # Research Agent Configuration
+        self.RESEARCH_MAX_ITERATIONS = int(os.getenv("RESEARCH_MAX_ITERATIONS", "5"))
+        self.RESEARCH_MAX_PAPERS_PER_SOURCE = int(os.getenv("RESEARCH_MAX_PAPERS_PER_SOURCE", "20"))
+        self.RESEARCH_ARXIV_TIMEOUT = float(os.getenv("RESEARCH_ARXIV_TIMEOUT", "15"))
+        self.RESEARCH_S2_API_KEY = os.getenv("RESEARCH_S2_API_KEY", "")
+        self.RESEARCH_S2_TIMEOUT = float(os.getenv("RESEARCH_S2_TIMEOUT", "15"))
+        self.RESEARCH_SANDBOX_TIMEOUT = int(os.getenv("RESEARCH_SANDBOX_TIMEOUT", "300"))
+        self.RESEARCH_SANDBOX_MEMORY = os.getenv("RESEARCH_SANDBOX_MEMORY", "2g")
+        self.RESEARCH_SANDBOX_CPU = int(os.getenv("RESEARCH_SANDBOX_CPU", "1"))
+        self.RESEARCH_SANDBOX_IMAGE = os.getenv("RESEARCH_SANDBOX_IMAGE", "python:3.11-slim")
 
         # Apply environment-specific settings
         self.apply_environment_settings()

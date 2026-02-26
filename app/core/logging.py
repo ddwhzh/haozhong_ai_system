@@ -7,6 +7,7 @@ console-friendly development logging and JSON-formatted production logging.
 
 import json
 import logging
+import re
 import sys
 from contextvars import ContextVar
 from datetime import datetime
@@ -19,6 +20,8 @@ from typing import (
 )
 
 import structlog
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 from app.core.config import (
     Environment,
@@ -100,10 +103,12 @@ class JsonlFileHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         """Emit a record to the JSONL file."""
         try:
+            raw_message = record.getMessage()
+            clean_message = _ANSI_ESCAPE_RE.sub("", raw_message)
             log_entry = {
                 "timestamp": datetime.fromtimestamp(record.created).isoformat(),
                 "level": record.levelname,
-                "message": record.getMessage(),
+                "message": clean_message,
                 "module": record.module,
                 "function": record.funcName,
                 "filename": record.pathname,
